@@ -1,0 +1,8 @@
+crypt is a package for crypto ease of use, [WARNING NOT FINISHED DO NOT USE]
+crypt aims to provide io.Readers and Writers as an interface to aes-gcm, this works by supplying a chunk size that will be used.
+
+TODO:
+o  Fix implementation (duh)
+o  Create a Close method for Writer that will encrypt all that is left in buffer and write it
+o  (Maybe) create a close method for Read, i'm not sure if this is required yet.
+o  Add tests around networking, and figure out how to test that memory does not get filled up, (probobally magic in runtime / pprof / reflect)
