@@ -148,11 +148,11 @@ func notEqual(r1 io.Reader, r2 io.Reader) error {
 	for errn < 5 {
 		_, err := r1.Read(buf1[:])
 		if err != nil {
-			errn += 1
+			errn++
 		}
 		_, err = r2.Read(buf2[:])
 		if err != nil {
-			errn += 1
+			errn++
 		}
 
 		// if the chunk is not equal return errNotEqual

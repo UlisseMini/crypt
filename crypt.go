@@ -1,6 +1,5 @@
-// crypt is an encryption library.
+// Package crypt is an encryption package.
 // it aims to provide io readers and writers for ease of use
-
 package crypt
 
 import (
@@ -11,6 +10,12 @@ import (
 	"io"
 )
 
+// DefaultBlockSize is the default size for blocks / chunks of encrypted
+// data. can be changed in NewReader and NewWriter
+const DefaultBlockSize = 32 * 1024
+
+// Reader implements the io.Reader interface, read data will be decrypted,
+// see NewReader for more information
 type Reader struct {
 	// r is the underlying reader
 	r io.Reader
@@ -18,10 +23,17 @@ type Reader struct {
 	// the gcm to be used
 	gcm cipher.AEAD
 
-	// buffer will be the chunk size used. (MUST BE SAME AS WITH ENCRYPTION)
+	// buf must be sized equal to the chunk size used in encryption
 	buf []byte
+
+	// plain is a buffer of plaintext, for when not all of buf is requested
+	// by the caller
+	plain []byte
 }
 
+// Writer implements the io.Writer interface, written data will be passed
+// to an underlying writer and encrypted
+// see NewWriter for more information
 type Writer struct {
 	// w is the underlying reader
 	w io.Writer
@@ -54,7 +66,7 @@ func (w Writer) Write(p []byte) (total int, err error) {
 				return total + nw, err
 			} else if nw != len(ciphertext) {
 				// if some was not read decryption will fail so raise an error now
-				err = errors.New("failed to write all data, decryption will fail")
+				err = io.ErrShortWrite
 			}
 
 			total += nw
@@ -92,11 +104,12 @@ func (r Reader) Read(p []byte) (int, error) {
 	return copy(p, b), nil
 }
 
-// NewReader creates a new reader using r and key
+// NewReader creates and returns a reader, the reader will decrypt aes-gcm data using key
+// and read chunks with size bufSize if bufSize is nil it will use its default
+// defined in DefaultBlockSize
 func NewReader(r io.Reader, key *[32]byte, bufSize int) (Reader, error) {
-	// default bufSize to 1k at a time
 	if bufSize == 0 {
-		bufSize = 1 * 1024
+		bufSize = DefaultBlockSize
 	}
 
 	gcm, err := newGCM(key)
@@ -112,11 +125,11 @@ func NewReader(r io.Reader, key *[32]byte, bufSize int) (Reader, error) {
 }
 
 // NewWriter creates a new writer using w and key. bufSize can be left nil
-// to use the default of 1k
+// to use the default specified in DefaultBlockSize
 func NewWriter(w io.Writer, key *[32]byte, bufSize int) (Writer, error) {
 	// default bufSize to 1k at a time
 	if bufSize == 0 {
-		bufSize = 1 * 1024
+		bufSize = DefaultBlockSize
 	}
 
 	gcm, err := newGCM(key)
